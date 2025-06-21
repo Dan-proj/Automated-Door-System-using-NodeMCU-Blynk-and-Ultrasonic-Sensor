@@ -1,0 +1,68 @@
+#define BLYNK_TEMPLATE_ID "TMPL67j_7Hwji"
+#define BLYNK_TEMPLATE_NAME "AUTOMATED DOOR"
+#define BLYNK_AUTH_TOKEN "i-xNAJMxen_yAM60Vi4Qi2bdcryC8oMO"
+
+#include <Servo.h>
+#include <BlynkSimpleEsp8266.h>
+
+// Wi-Fi credentials
+const char* ssid = "Wi-Fi Name";
+const char* pass = "Wi-Fi Password";
+
+// Initialize servo
+Servo doorServo;
+
+// Define pins for ultrasonic sensor
+const int trigPin = D5; // NodeMCU pin D5
+const int echoPin = D6; // NodeMCU pin D6
+
+// Servo position
+const int closedPosition = 0;  // Servo angle for a closed door
+const int openPosition = 180;   // Servo angle for an open door
+
+void setup() {
+  // Initialize the servo
+  doorServo.attach(D2);  // Connect the servo signal to NodeMCU pin D2
+  doorServo.write(closedPosition);
+
+  // Initialize Blynk
+  Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+
+  // Initialize ultrasonic sensor pins
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // Send initial status to Blynk app
+  Blynk.virtualWrite(V1, "System Ready");
+}
+
+void loop() {
+  Blynk.run(); // Keep Blynk connected
+
+  // Measure distance with ultrasonic sensor
+  long duration, distance;
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  
+  // Calculate distance in cm
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * 0.034 / 2;
+
+  // Check if an object is within range
+  if (distance > 0 && distance < 20) {  // Adjust the distance range as needed
+    Blynk.virtualWrite(V1, "WELCOME HOME");
+
+    // Open the door
+    doorServo.write(openPosition);
+    delay(5000);  // Keep the door open for 5 seconds
+
+    // Close the door
+    doorServo.write(closedPosition);
+    Blynk.virtualWrite(V1, "System Ready");
+  }
+
+  delay(100);  // Short delay to avoid excessive triggering
+}
